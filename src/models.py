@@ -117,9 +117,8 @@ class Permissions(Base):
                 server_default=text('uuid_generate_v4()'))
     username = Column(TEXT, nullable=False)
     service_id = Column(UUID(as_uuid=True), ForeignKey('services.id'), nullable=True)
-    # site-admin    - create/update/delete any service
     # service-admin - update specific service
     # updater       - add events to specific service
-    permission = Column(ENUM('site-admin', 'service-admin', 'updater'), nullable=False)
+    permission = Column(ENUM('service-admin', 'updater'), nullable=False)
 
     service = relationship('Service', backref='allowed_users')
