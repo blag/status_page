@@ -16,9 +16,9 @@ class ServiceGroup(Base):
                 # This requires the uuid-ossp extension
                 server_default=text('uuid_generate_v4()'))
 
-    name = Column(TEXT)
-    description = Column(TEXT)
-    slug = Column(TEXT, unique=True)
+    name = Column(TEXT, nullable=False)
+    description = Column(TEXT, nullable=False)
+    slug = Column(TEXT, nullable=False, unique=True)
 
 
 class ServiceServiceGroup(Base):
@@ -30,8 +30,8 @@ class ServiceServiceGroup(Base):
                 # This requires the uuid-ossp extension
                 server_default=text('uuid_generate_v4()'))
 
-    group_id = Column(UUID(as_uuid=True), ForeignKey('service_groups.id'))
-    service_id = Column(UUID(as_uuid=True), ForeignKey('services.id'))
+    group_id = Column(UUID(as_uuid=True), ForeignKey('service_groups.id'), nullable=False)
+    service_id = Column(UUID(as_uuid=True), ForeignKey('services.id'), nullable=False)
 
 
 class Service(Base):
@@ -42,9 +42,9 @@ class Service(Base):
                 # This requires the uuid-ossp extension
                 server_default=text('uuid_generate_v4()'))
 
-    name = Column(TEXT)
-    description = Column(TEXT)
-    slug = Column(TEXT, unique=True)
+    name = Column(TEXT, nullable=False)
+    description = Column(TEXT, nullable=False)
+    slug = Column(TEXT, nullable=False, unique=True)
 
     groups = relationship('Event', backref='services', secondary=ServiceServiceGroup)
 
@@ -56,12 +56,12 @@ class Event(Base):
                 primary_key=True,
                 # This requires the uuid-ossp extension
                 server_default=text('uuid_generate_v4()'))
-    service_id = Column(UUID(as_uuid=True), ForeignKey('services.id'))
-    when = Column(TIMESTAMP(timezone=True))
-    status = Column(ENUM('up', 'down', 'limited'))
-    text = Column(TEXT)
-    informational = Column(Boolean)
-    extra = Column(JSONB)
+    service_id = Column(UUID(as_uuid=True), ForeignKey('services.id'), nullable=False)
+    when = Column(TIMESTAMP(timezone=True), nullable=False)
+    status = Column(ENUM('up', 'down', 'limited'), nullable=False)
+    text = Column(TEXT, nullable=False)
+    informational = Column(Boolean, nullable=False)
+    extra = Column(JSONB, nullable=False)
 
     service = relationship('Service', backref='events')
 
@@ -75,10 +75,10 @@ class EphemeralNotification(Base):
                 # This requires the uuid-ossp extension
                 server_default=text('uuid_generate_v4()'))
 
-    username = Column(TEXT)
-    service_id = Column(UUID(as_uuid=True), ForeignKey('services.id'))
-    chat = Column(Boolean)
-    email = Column(Boolean)
+    username = Column(TEXT, nullable=False)
+    service_id = Column(UUID(as_uuid=True), ForeignKey('services.id'), nullable=False)
+    chat = Column(Boolean, nullable=False)
+    email = Column(Boolean, nullable=False)
 
     service = relationship('Service', backref='ephemeral_notifications')
 
@@ -91,8 +91,8 @@ class DisplayPreferences(Base):
                 # This requires the uuid-ossp extension
                 server_default=text('uuid_generate_v4()'))
 
-    username = Column(TEXT, unique=True)
-    preferences = Column(JSONB)
+    username = Column(TEXT, nullable=False, unique=True)
+    preferences = Column(JSONB, nullable=False)
 
 
 class APIKeys(Base):
@@ -103,8 +103,8 @@ class APIKeys(Base):
                 primary_key=True,
                 # This requires the uuid-ossp extension
                 server_default=text('uuid_generate_v4()'))
-    username = Column(TEXT)
-    key = Column(TEXT)
+    username = Column(TEXT, nullable=False)
+    key = Column(TEXT, nullable=False)
 
 
 class Permissions(Base):
@@ -115,11 +115,11 @@ class Permissions(Base):
                 primary_key=True,
                 # This requires the uuid-ossp extension
                 server_default=text('uuid_generate_v4()'))
-    username = Column(TEXT)
-    service_id = Column(UUID(as_uuid=True), ForeignKey('services.id'))
+    username = Column(TEXT, nullable=False)
+    service_id = Column(UUID(as_uuid=True), ForeignKey('services.id'), nullable=True)
     # site-admin    - create/update/delete any service
     # service-admin - update specific service
     # updater       - add events to specific service
-    permission = Column(ENUM('site-admin', 'service-admin', 'updater'))
+    permission = Column(ENUM('site-admin', 'service-admin', 'updater'), nullable=False)
 
     service = relationship('Service', backref='allowed_users')
