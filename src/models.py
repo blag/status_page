@@ -116,7 +116,7 @@ class Permissions(Base):
                 # This requires the uuid-ossp extension
                 server_default=text('uuid_generate_v4()'))
     username = Column(TEXT, nullable=False)
-    service_id = Column(UUID(as_uuid=True), ForeignKey('services.id'), nullable=True)
+    service_id = Column(UUID(as_uuid=True), ForeignKey('services.id'), nullable=False)
     # service-admin - update specific service
     # updater       - add events to specific service
     permission = Column(ENUM('service-admin', 'updater'), nullable=False)
