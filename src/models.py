@@ -1,8 +1,8 @@
-from sqlalchemy import (Table, Column, ForeignKey, text, UniqueConstraint)
-from sqlalchemy.types import (Boolean, Integer, TIMESTAMP)
+from sqlalchemy import (Column, ForeignKey, text, UniqueConstraint)
 from sqlalchemy.dialects.postgresql import (ENUM, JSONB, TEXT, UUID)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from sqlalchemy.types import (Boolean, TIMESTAMP)
 
 
 Base = declarative_base()
