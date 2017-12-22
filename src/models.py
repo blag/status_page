@@ -46,7 +46,7 @@ class Service(Base):
     description = Column(TEXT, nullable=False)
     slug = Column(TEXT, nullable=False, unique=True)
 
-    groups = relationship('Event', backref='services', secondary=ServiceServiceGroup)
+    groups = relationship('ServiceGroup', backref='services', secondary='service_service_groups')
 
 
 class Event(Base):
