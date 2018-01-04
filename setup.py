@@ -18,6 +18,12 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
+test_requirements = [
+    'pytest',
+    'pytest-cov',
+    'pytest-sugar',
+]
+
 setup(
     name='mz_sample',
 
@@ -63,14 +69,31 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=[],
+    install_requires=[
+        'arrow',
+        'awesome-slugify',
+        'falcon',
+        'falcon-auth',
+        'pytz',
+        'sqlalchemy',
+    ],
+
+    # List additional dependencies for running tests. You can install these by
+    # running:
+    #
+    # $ python setup.py test
+    tests_require=test_requirements,
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:
-    # $ pip install -e .[dev,test]
+    # $ pip install -e .[dev,tests]
     extras_require={
-        'dev': ['pytest', 'pytest-cov', 'pytest-sugar'],
+        'tests': test_requirements,
+        'dev': [
+            'gunicorn',
+            'httpie',
+        ],
     },
 
     # If there are data files included in your packages that need to be

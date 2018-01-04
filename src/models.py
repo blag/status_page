@@ -1,8 +1,11 @@
-from sqlalchemy import (Column, ForeignKey, text, UniqueConstraint)
+from sqlalchemy import event
+from sqlalchemy import (Column, ForeignKey, Index, text, UniqueConstraint)
 from sqlalchemy.dialects.postgresql import (ENUM, JSONB, TEXT, UUID)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import (Boolean, TIMESTAMP)
+
+from slugify import slugify
 
 
 Base = declarative_base()
@@ -20,9 +23,12 @@ class ServiceGroup(Base):
     description = Column(TEXT, nullable=False)
     slug = Column(TEXT, nullable=False, unique=True)
 
+    def __str__(self):
+        return self.name
+
 
 class ServiceServiceGroup(Base):
-    __tablename__ = 'service_service_groups'
+    __tablename__ = 'service_groups_services'
     __table_args__ = (UniqueConstraint('group_id', 'service_id'),)
 
     id = Column(UUID(as_uuid=True),
@@ -32,6 +38,9 @@ class ServiceServiceGroup(Base):
 
     group_id = Column(UUID(as_uuid=True), ForeignKey('service_groups.id'), nullable=False)
     service_id = Column(UUID(as_uuid=True), ForeignKey('services.id'), nullable=False)
+
+    def __str__(self):
+        return f"{self.group_id}.{self.service_id}"
 
 
 class Service(Base):
@@ -46,7 +55,10 @@ class Service(Base):
     description = Column(TEXT, nullable=False)
     slug = Column(TEXT, nullable=False, unique=True)
 
-    groups = relationship('ServiceGroup', backref='services', secondary='service_service_groups')
+    groups = relationship('ServiceGroup', backref='services', secondary='service_groups_services')
+
+    def __str__(self):
+        return self.name
 
 
 class Event(Base):
@@ -57,13 +69,20 @@ class Event(Base):
                 # This requires the uuid-ossp extension
                 server_default=text('uuid_generate_v4()'))
     service_id = Column(UUID(as_uuid=True), ForeignKey('services.id'), nullable=False)
+    # Index on the timestamp, BETWEEN
     when = Column(TIMESTAMP(timezone=True), nullable=False)
-    status = Column(ENUM('up', 'down', 'limited'), nullable=False)
-    text = Column(TEXT, nullable=False)
+    status = Column(ENUM('up', 'down', 'limited', name='status_enum', create_type=False),
+                    nullable=False)
+    description = Column(TEXT, nullable=False)
     informational = Column(Boolean, nullable=False)
     extra = Column(JSONB, nullable=False)
 
+    ix_events_when = Index(when.desc())
+
     service = relationship('Service', backref='events')
+
+    def __str__(self):
+        return f"{self.service} -> {self.status.upper()}"
 
 
 class EphemeralNotification(Base):
@@ -82,6 +101,9 @@ class EphemeralNotification(Base):
 
     service = relationship('Service', backref='ephemeral_notifications')
 
+    def __str__(self):
+        return f"Notify {self.username} via {'chat' if self.chat else 'email' if self.email else 'None'} about {self.service}"
+
 
 class DisplayPreferences(Base):
     __tablename__ = 'display_preferences'
@@ -94,8 +116,11 @@ class DisplayPreferences(Base):
     username = Column(TEXT, nullable=False, unique=True)
     preferences = Column(JSONB, nullable=False)
 
+    def __str__(self):
+        return f"{self.username} preferences"
 
-class APIKeys(Base):
+
+class APIKey(Base):
     __tablename__ = 'api_keys'
     __table_args__ = ()
 
@@ -103,11 +128,16 @@ class APIKeys(Base):
                 primary_key=True,
                 # This requires the uuid-ossp extension
                 server_default=text('uuid_generate_v4()'))
+    created = Column(TIMESTAMP(timezone=True), nullable=False)
     username = Column(TEXT, nullable=False)
+    bot = Column(Boolean, nullable=False)
     key = Column(TEXT, nullable=False)
 
+    def __str__(self):
+        return f"{self.username} API key"
 
-class Permissions(Base):
+
+class Permission(Base):
     __tablename__ = 'permissions'
     __table_args__ = ()
 
@@ -119,6 +149,23 @@ class Permissions(Base):
     service_id = Column(UUID(as_uuid=True), ForeignKey('services.id'), nullable=False)
     # service-admin - update specific service
     # updater       - add events to specific service
-    permission = Column(ENUM('service-admin', 'updater'), nullable=False)
+    permission = Column(ENUM('service-admin', 'updater', name='role_enum', create_type=False),
+                        nullable=False)
 
     service = relationship('Service', backref='allowed_users')
+
+    def __str__(self):
+        return f"{self.username} ({self.permission} for {self.service})"
+
+
+# http://docs.sqlalchemy.org/en/latest/orm/events.html#sqlalchemy.orm.events.AttributeEvents.set
+@event.listens_for(ServiceGroup.name, 'set')
+def set_slug(target, value, oldvalue, initiator):
+    '''Set the slug when the name changes'''
+    target.slug = slugify(value, to_lower=True)
+
+
+@event.listens_for(Service.name, 'set')
+def set_slug(target, value, oldvalue, initiator):
+    '''Set the slug when the name changes'''
+    target.slug = slugify(value, to_lower=True)
