@@ -55,7 +55,13 @@ class Service(Base):
     description = Column(TEXT, nullable=False)
     slug = Column(TEXT, nullable=False, unique=True)
 
+    ix_services_slug = Index(slug)
+
     groups = relationship('ServiceGroup', backref='services', secondary='service_groups_services')
+
+    events = relationship('Event', backref='service', cascade='delete, delete-orphan')
+    ephemeral_notifications = relationship('EphemeralNotification', backref='service', cascade='delete, delete-orphan')
+    allowed_users = relationship('Permission', backref='service', cascade='delete, delete-orphan')
 
     def __str__(self):
         return self.name
@@ -79,7 +85,7 @@ class Event(Base):
 
     ix_events_when = Index(when.desc())
 
-    service = relationship('Service', backref='events')
+    # service = relationship('Service', backref='events', cascade='delete, delete-orphan')
 
     def __str__(self):
         return f"{self.service} -> {self.status.upper()}"
@@ -99,7 +105,7 @@ class EphemeralNotification(Base):
     chat = Column(Boolean, nullable=False)
     email = Column(Boolean, nullable=False)
 
-    service = relationship('Service', backref='ephemeral_notifications')
+    # service = relationship('Service', backref='ephemeral_notifications', cascade='delete, delete-orphan')
 
     def __str__(self):
         return f"Notify {self.username} via {'chat' if self.chat else 'email' if self.email else 'None'} about {self.service}"
@@ -120,23 +126,6 @@ class DisplayPreferences(Base):
         return f"{self.username} preferences"
 
 
-class APIKey(Base):
-    __tablename__ = 'api_keys'
-    __table_args__ = ()
-
-    id = Column(UUID(as_uuid=True),
-                primary_key=True,
-                # This requires the uuid-ossp extension
-                server_default=text('uuid_generate_v4()'))
-    created = Column(TIMESTAMP(timezone=True), nullable=False)
-    username = Column(TEXT, nullable=False)
-    bot = Column(Boolean, nullable=False)
-    key = Column(TEXT, nullable=False)
-
-    def __str__(self):
-        return f"{self.username} API key"
-
-
 class Permission(Base):
     __tablename__ = 'permissions'
     __table_args__ = ()
@@ -149,10 +138,10 @@ class Permission(Base):
     service_id = Column(UUID(as_uuid=True), ForeignKey('services.id'), nullable=False)
     # service-admin - update specific service
     # updater       - add events to specific service
-    permission = Column(ENUM('service-admin', 'updater', name='role_enum', create_type=False),
-                        nullable=False)
+    type = Column(ENUM('service-admin', 'updater', name='role_enum', create_type=False),
+                  nullable=False)
 
-    service = relationship('Service', backref='allowed_users')
+    # service = relationship('Service', backref='allowed_users', cascade='delete, delete-orphan')
 
     def __str__(self):
         return f"{self.username} ({self.permission} for {self.service})"
@@ -160,12 +149,12 @@ class Permission(Base):
 
 # http://docs.sqlalchemy.org/en/latest/orm/events.html#sqlalchemy.orm.events.AttributeEvents.set
 @event.listens_for(ServiceGroup.name, 'set')
-def set_slug(target, value, oldvalue, initiator):
+def set_service_group_slug(target, value, oldvalue, initiator):
     '''Set the slug when the name changes'''
     target.slug = slugify(value, to_lower=True)
 
 
 @event.listens_for(Service.name, 'set')
-def set_slug(target, value, oldvalue, initiator):
+def set_service_slug(target, value, oldvalue, initiator):
     '''Set the slug when the name changes'''
     target.slug = slugify(value, to_lower=True)

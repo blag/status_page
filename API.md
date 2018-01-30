@@ -19,7 +19,7 @@ Everybody is allowed to view almost all data about services, except for permitte
 +-------------------------------------------------+---------------------+---------------------+----------+-----------------+-----------+
 | /status                                         |                     |                     |          |                 |  GET      |
 | /services                                       |     POST            |                     |          |                 |  GET      |
-| /services/{service_slug}                        |          PUT        |          PUT        |          |                 |  GET      |
+| /services/{service_slug}                        |          PUT DELETE |          PUT DELETE |          |                 |  GET      |
 | /services/{service_slug}/status                 |                     |                     |          |                 |  GET      |
 | /services/{service_slug}/events                 |     POST            |     POST            |     POST |                 |  GET      |
 | /services/{service_slug}/events/{event_id}      |                     |                     |          |                 |  GET      |
@@ -45,7 +45,7 @@ things, the '...' shorthand implies pagination information included where reason
         status.
 
         If a service is down or limited, its dictionary should include a list of events since the
-        last time it was up (but not including the last time it was up).
+        last time it was up (including the last time it was up).
 
         Example:
         {
@@ -132,6 +132,18 @@ things, the '...' shorthand implies pagination information included where reason
             "description": "Track issues, submit service requests"
         }
 
+  DELETE - Delete a service and all associated events and permissions
+
+           Only site admins should be able to delete services
+
+           The JSON data should specify the service by name, just to double check that the user
+           intended to delete the service.
+
+           Example:
+           {
+               "name": "Jira"
+           }
+
 /services/{service_slug}/status
 
   GET - Get the status for a specific service
@@ -140,7 +152,7 @@ things, the '...' shorthand implies pagination information included where reason
         status.
 
         If service is down or limited, the response should include a list of events since the last
-        time it was up (but not including the last time it was up).
+        time it was up (including the last time it was up).
 
         Example:
         {
@@ -262,28 +274,53 @@ things, the '...' shorthand implies pagination information included where reason
              "permission": <service-admin>
          }
 
-/services/{service_slug}/permissions/{username}
+/services/{service_slug}/permissions/{permission_id}
 
-  GET - Get a user's permissions for a service
-
-        This endpoint can return `null` if the user does not have permission for the service.
+  GET - Get a specific permission for a service
 
         Example:
         {
+            "username": <username>,
+            "service": {
+                "name": "Jira",
+                "slug": "jira",
+                "description": "..."
+            },
             "permission": <service-admin|updater>
         }
 
-        Example:
-        null
+  PUT - Update a permission for a service
 
-  PUT - Update a user's permissions for a service
+        Site admins can create permissions for all services.
+
+        Service admins can only create permissions for services they own.
 
         Example:
         {
+            "service": <service_slug>,
+            "username": <username>,
             "permission": <service-admin|updater>
         }
 
   DELETE - Remove a user's permissions for a service
+
+/users/{username}/permissions
+
+  GET - List all granted permissions for a user
+
+        Example:
+        {
+            ...,
+            "results": [
+                {
+                    "id": <UUID>,
+                    "service": "/services/jira",
+                    "type": "updater",
+                    "url": "/services/jira/permissions/<UUID>",
+                }
+            ],
+            "url": "/users/<username>/permissions"
+        }
 
 /api-keys
 
@@ -297,15 +334,13 @@ things, the '...' shorthand implies pagination information included where reason
 
          Service admins can create API keys that do not expire for services that they own.
 
-         Non-admin users can create API keys that have non-null expirations.
+         Non-admin users can create API tokens that expire after 24 hours.
 
-         Site admins should be able to create API keys for anybody for any service.
+         These JWT API keys identify a permission ID. This means that a single user can have
+         multiple API keys with different permission levels.
 
-         Service admins can create API keys for other users for a service they administrate. This
-         can be useful for creating API keys for updaters and other bots.
-
-         Users can create API keys to authenticate as themselves, and all API keys will have the
-         same restrictions that the user has in the system.
+         To revoke permissions for an API key, simply revoke the corresponding permission object
+         in the database.
 
          The API key data will only be returned once. This is a write-only, read-once endpoint.
          If the API key is forgotten or otherwise inaccessible, another API key must be generated

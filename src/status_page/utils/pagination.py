@@ -2,6 +2,10 @@
 Pagination utilities
 '''
 import math
+from urllib.parse import (urlencode, urlunparse)
+
+
+__all__ = ['paginate']
 
 
 def paginate(query, page, page_size, request=None, path=None, params=None, convert_items_callback=None):
@@ -17,13 +21,16 @@ def paginate(query, page, page_size, request=None, path=None, params=None, conve
     `convert_items_callback` - A callback function to convert each query object to a dictionary
     """
 
+    if not page:
+        page = 1
+
     if page <= 0:
         raise ValueError("The page parameter must be greater than zero")
 
-    if page_size <= 0:
+    if page_size and page_size <= 0:
         raise ValueError("The page_size parameter must be greater than zero")
 
-    items = query.limit(page_size).offset((page-1) * page_size).all()
+    items = query.limit(page_size).offset((page - 1) * page_size).all()
     count = query.order_by(None).count()
     return Page(items, page, page_size, count, path=path, params=params,
                 convert_items_callback=convert_items_callback)
@@ -88,13 +95,15 @@ class Page(object):
         previous_params['page'] = self.previous_page
         next_params['page'] = self.next_page
 
+        self.url = urlunparse(('', '', path, '', urlencode(params, doseq=True), ''))
+
         if has_previous:
             # Construct the URL, taking care to not overwrite any query parameters
-            self.previous = urlunparse(('', '', path, '', urlencode(previous_params, doseq=True), '', ''))
+            self.previous = urlunparse(('', '', path, '', urlencode(previous_params, doseq=True), ''))
         else:
             self.previous = None
 
         if has_next:
-            self.next = urlunparse(('', '', path, '', urlencode(next_params, doseq=True), '', ''))
+            self.next = urlunparse(('', '', path, '', urlencode(next_params, doseq=True), ''))
         else:
             self.next = None

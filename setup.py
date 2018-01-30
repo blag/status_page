@@ -7,7 +7,7 @@ https://github.com/pypa/sampleproject
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages
 # To use a consistent encoding
-from codecs import open
+from codecs import open as codecs_open
 from os import path
 import sys
 
@@ -24,8 +24,9 @@ test_requirements = [
     'pytest-sugar',
 ]
 
+
 setup(
-    name='mz_sample',
+    name='status_page',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
@@ -48,20 +49,17 @@ setup(
         #   3 - Alpha
         #   4 - Beta
         #   5 - Production/Stable
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.5',
-        ''
+        'Programming Language :: Python :: 3.6',
     ],
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
     package_dir={'': 'src'},
-    packages=find_packages('src/'),
+    # packages=find_packages('src/'),
 
     namespace_packages=[],
 
@@ -70,12 +68,15 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
-        'arrow',
         'awesome-slugify',
+        'cryptography',
         'falcon',
-        'falcon-auth',
+        'gunicorn',
+        'jsonschema',
+        'psycopg2',
+        'pyjwt',
         'pytz',
-        'sqlalchemy',
+        'SQLAlchemy',
     ],
 
     # List additional dependencies for running tests. You can install these by
@@ -91,7 +92,6 @@ setup(
     extras_require={
         'tests': test_requirements,
         'dev': [
-            'gunicorn',
             'httpie',
         ],
     },
