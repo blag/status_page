@@ -548,6 +548,18 @@ class EventsRoute(object):
         if before is not None:
             q = q.filter(Event.when < before)
 
+        # Special processing for extra because we want to allow JSONPath-ish strings
+        for param, extra_value in req.params.items():
+            if param.startswith('extra.'):
+                extra = param[6:] if param.startswith('extra.') else param
+
+                if extra.endswith(':exists'):
+                    # Do a has_key instead
+                    extra = extra[:-7]
+                    extra_value = None
+
+                q = generate_jsonb_query(query=q, column=Event.extra, jsonpath=extra, value=extra_value)
+
         if order_bys is not None:
             # Use an ordered dictionary so specifying the same key twice doesn't confuse things
             order_bys_dict = OrderedDict()

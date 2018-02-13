@@ -72,6 +72,7 @@ setup(
         'cryptography',
         'falcon',
         'gunicorn',
+        'jsonpath-rw',
         'jsonschema',
         'psycopg2',
         'pyjwt',
