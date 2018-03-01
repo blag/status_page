@@ -7,7 +7,7 @@ https://github.com/pypa/sampleproject
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages
 # To use a consistent encoding
-from codecs import open
+from codecs import open as codecs_open
 from os import path
 import sys
 
@@ -18,8 +18,15 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
+test_requirements = [
+    'pytest',
+    'pytest-cov',
+    'pytest-sugar',
+]
+
+
 setup(
-    name='mz_sample',
+    name='status_page',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
@@ -42,20 +49,17 @@ setup(
         #   3 - Alpha
         #   4 - Beta
         #   5 - Production/Stable
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.5',
-        ''
+        'Programming Language :: Python :: 3.6',
     ],
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
     package_dir={'': 'src'},
-    packages=find_packages('src/'),
+    # packages=find_packages('src/'),
 
     namespace_packages=[],
 
@@ -63,14 +67,34 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=[],
+    install_requires=[
+        'awesome-slugify',
+        'cryptography',
+        'falcon',
+        'gunicorn',
+        'jsonpath-rw',
+        'jsonschema',
+        'psycopg2',
+        'pyjwt',
+        'pytz',
+        'SQLAlchemy',
+    ],
+
+    # List additional dependencies for running tests. You can install these by
+    # running:
+    #
+    # $ python setup.py test
+    tests_require=test_requirements,
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:
-    # $ pip install -e .[dev,test]
+    # $ pip install -e .[dev,tests]
     extras_require={
-        'dev': ['pytest', 'pytest-cov', 'pytest-sugar'],
+        'tests': test_requirements,
+        'dev': [
+            'httpie',
+        ],
     },
 
     # If there are data files included in your packages that need to be
